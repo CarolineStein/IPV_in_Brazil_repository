@@ -1,0 +1,103 @@
+#########################################################################################################################################################
+#
+#Assessing methodological differences in estimating exposure to intimate-partner violence against women in Brazil: a multi-source observational analysis
+#
+#########################################################################################################################################################
+
+***************** Intimate partner violence, PNS 2019 *********************
+*** Declare the survey and establish weights
+svyset UPA_PNS [pweight=V00291], strata(V0024) vce(linearized) singleunit(missing)
+** Sociodemographic characteristics
+
+*Sex
+label variable C006 "Sexo"
+label define C006 1 "Masculino" 2 "Feminino"
+label values C006 C006
+
+*Age group
+label values C008 "Idade"
+gen faixaetaria=.
+replace faixaetaria=0 if C008 < 18 
+replace faixaetaria=1 if C008 >= 18 & C008 <=29 
+replace faixaetaria=2 if C008 >= 30 & C008 <=39
+replace faixaetaria=3 if C008 >= 40 & C008 <=49
+replace faixaetaria=4 if C008 >= 50 & C008 <=59
+replace faixaetaria=5 if C008 >= 60
+label define faixaetaria 0 "<18 anos" 1 "18 a 29 anos" 2 "30 a 39 anos" 3 "40 a 49 anos" 4 "50 a 59 anos" 5 "60 anos ou mais"
+label values faixaetaria faixaetaria
+
+****Generating outcome variables
+
+***Physical Violence
+gen fisica =.
+replace fisica =0 if V01401==2 & V01402 ==2 & V01403 ==2 & V01404 ==2 & V01405 ==2
+replace fisica =1 if V01401==1 | V01402 ==1 | V01403 ==1 | V01404 ==1 | V01405 ==1
+label define fisica 1 "Sim" 0 "Não"
+label values fisica fisica
+
+**Intimate partner aggressor
+gen agressor_fisica =.
+replace agressor_fisica =1 if V018==01 | V018==02 | V018==03
+replace agressor_fisica =2 if V018==04 | V018==05 | V018==06 | V018==07 | V018==08 | V018==09 | V018==10 | V018==11 | V018==12 | V018==13
+label define agressor_fisica 1 "Parceiro íntimo" 2 "Outros"
+label values agressor_fisica agressor_fisica
+
+**Intimate partner physical violence
+gen fisica_vpi =.
+replace fisica_vpi =0 if fisica==0 | fisica==1 & agressor_fisica==2
+replace fisica_vpi =1 if fisica==1 & agressor_fisica==1
+label define fisica_vpi 0 "Não" 1 "Sim"
+label values fisica_vpi fisica_vpi
+
+***Sexual Violence
+gen sexual =.
+replace sexual =0 if V02701==2 & V02702==2
+replace sexual =1 if V02701==1 | V02702==1
+label define sexual 1 "Sim" 0 "Não"
+label values sexual sexual
+
+**Intimate partner aggressor
+gen agressor_sexual =.
+replace agressor_sexual =1 if V032==01 | V032==02 | V032==03
+replace agressor_sexual =2 if V032==04 | V032==05 | V032==06 | V032==07 | V032==08 | V032==09 | V032==10 | V032==11 | V032==12 | V032==13
+label define agressor_sexual 1 "Parceiro íntimo" 2 "Outros"
+label values agressor_sexual agressor_sexual
+
+**Intimate partner sexual violence
+gen sexual_vpi =.
+replace sexual_vpi =0 if sexual==0 | sexual ==1 & agressor_sexual==2
+replace sexual_vpi =1 if sexual==1 & agressor_sexual==1
+label define sexual_vpi 0 "Não" 1 "Sim"
+label values sexual_vpi sexual_vpi
+
+***Creating subpopulation***
+**Women aged 18 and older
+gen subpop = C006==2 & C008>=18 & M001==1
+
+*** Statistical analyses ***
+
+***With sample weight***
+
+**Expanded population
+
+*Number of women
+svy linearized, subpop(subpop) : tabulate subpop faixaetaria, count format(%9.0f)
+
+*Proportion with confidence interval
+svy linearized, subpop(subpop) : tabulate subpop faixaetaria, row ci pearson
+
+**Physical violence
+*Number of physical violence cases (expanded population)
+svy linearized, subpop(subpop) : tabulate fisica_vpi faixaetaria, count format(%9.1f)
+
+*Proportion of age group with CI
+svy linearized, subpop(subpop) : tabulate fisica_vpi faixaetaria, row ci pearson
+
+*Prevalence by age group
+svy linearized, subpop(subpop) : tabulate faixaetaria fisica_vpi, row ci pearson
+
+**Sexual violence
+svy linearized, subpop(subpop) : tabulate sexual_vpi faixaetaria, count format(%9.2f)
+svy linearized, subpop(subpop) : tabulate sexual_vpi faixaetaria, row ci pearson
+svy linearized, subpop(subpop) : tabulate faixaetaria sexual_vpi, row ci pearson
+
